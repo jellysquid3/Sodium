@@ -22,7 +22,7 @@ public class ChunkRenderCacheLocal extends ChunkRenderCache {
     private final WorldSlice worldSlice;
 
     public ChunkRenderCacheLocal(MinecraftClient client, World world) {
-        this.worldSlice = new WorldSlice(world);
+        this.worldSlice = WorldSlice.create(world);
         this.lightDataCache = new ArrayLightDataCache(this.worldSlice);
 
         LightPipelineProvider lightPipelineProvider = new LightPipelineProvider(this.lightDataCache);

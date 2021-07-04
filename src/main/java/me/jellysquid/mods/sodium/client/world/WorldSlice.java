@@ -1,6 +1,7 @@
 package me.jellysquid.mods.sodium.client.world;
 
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
+import me.jellysquid.mods.sodium.client.compat.CompatHolder;
 import me.jellysquid.mods.sodium.client.world.cloned.PackedIntegerArrayExtended;
 import me.jellysquid.mods.sodium.client.world.biome.BiomeCache;
 import me.jellysquid.mods.sodium.client.world.biome.BiomeColorCache;
@@ -22,6 +23,8 @@ import net.minecraft.world.biome.source.BiomeAccess;
 import net.minecraft.world.chunk.*;
 import net.minecraft.world.chunk.light.LightingProvider;
 import net.minecraft.world.level.ColorResolver;
+import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
@@ -36,7 +39,7 @@ import java.util.Map;
  *
  * Object pooling should be used to avoid huge allocations as this class contains many large arrays.
  */
-public class WorldSlice implements BlockRenderView, BiomeAccess.Storage, RenderAttachedBlockView {
+public class WorldSlice implements BlockRenderView, BiomeAccess.Storage {
     // The number of blocks on each axis in a section.
     private static final int SECTION_BLOCK_LENGTH = 16;
 
@@ -69,7 +72,7 @@ public class WorldSlice implements BlockRenderView, BiomeAccess.Storage, RenderA
     private final BlockState[][] blockStatesArrays;
 
     // Local section copies. Read-only.
-    private ClonedChunkSection[] sections;
+    protected ClonedChunkSection[] sections;
 
     // Biome caches for each chunk section
     private BiomeCache[] biomeCaches;
@@ -86,7 +89,7 @@ public class WorldSlice implements BlockRenderView, BiomeAccess.Storage, RenderA
     private BiomeColorCache prevColorCache;
 
     // The starting point from which this slice captures blocks
-    private int baseX, baseY, baseZ;
+    protected int baseX, baseY, baseZ;
 
     // The chunk origin of this slice
     private ChunkSectionPos origin;
@@ -132,6 +135,12 @@ public class WorldSlice implements BlockRenderView, BiomeAccess.Storage, RenderA
         return new ChunkRenderContext(origin, sections, volume);
     }
 
+    public static @NotNull WorldSlice create(@NotNull World world) {
+        return CompatHolder.WORLD_SLICE_FACTORY.create(world);
+    }
+
+    // don't use this directly, use WorldSlice.create instead
+    @ApiStatus.Internal
     public WorldSlice(World world) {
         this.world = world;
 
@@ -359,15 +368,5 @@ public class WorldSlice implements BlockRenderView, BiomeAccess.Storage, RenderA
     @Override
     public int getBottomY() {
         return this.world.getBottomY();
-    }
-
-    @Override
-    public @Nullable Object getBlockEntityRenderAttachment(BlockPos pos) {
-        int relX = pos.getX() - this.baseX;
-        int relY = pos.getY() - this.baseY;
-        int relZ = pos.getZ() - this.baseZ;
-
-        return this.sections[WorldSlice.getLocalSectionIndex(relX >> 4, relY >> 4, relZ >> 4)]
-                .getBlockEntityRenderAttachment(relX & 15, relY & 15, relZ & 15);
     }
 }
